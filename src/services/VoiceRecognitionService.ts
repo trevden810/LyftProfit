@@ -54,6 +54,9 @@ class VoiceRecognitionService {
   private isListening: boolean = false;
   private handlers: VoiceCommandHandler;
   private speechSynthesis: SpeechSynthesis;
+  private lastProcessedCommand: string = '';
+  private processingCooldown: boolean = false;
+  private lastCommandTime: number = 0;
 
   constructor(handlers: VoiceCommandHandler) {
     this.handlers = handlers;
@@ -128,6 +131,33 @@ class VoiceRecognitionService {
 
   private processCommand(command: string): void {
     console.log('Processing command:', command);
+
+    // Check if this is a duplicate command within a short time window
+    const currentTime = Date.now();
+    const timeSinceLastCommand = currentTime - this.lastCommandTime;
+
+    // If the command is the same as the last one and it's within 3 seconds, ignore it
+    if (command === this.lastProcessedCommand && timeSinceLastCommand < 3000) {
+      console.log('Ignoring duplicate command within cooldown period');
+      return;
+    }
+
+    // If we're in a cooldown period, ignore all commands
+    if (this.processingCooldown) {
+      console.log('Ignoring command during cooldown period');
+      return;
+    }
+
+    // Update the last command and time
+    this.lastProcessedCommand = command;
+    this.lastCommandTime = currentTime;
+
+    // Set a cooldown flag to prevent processing multiple commands in quick succession
+    this.processingCooldown = true;
+    setTimeout(() => {
+      this.processingCooldown = false;
+      console.log('Cooldown period ended, ready for new commands');
+    }, 2000); // 2-second cooldown
 
     // Simple revenue command pattern: just "record revenue"
     if (command.match(/^record revenue$/i) || command.match(/^add revenue$/i)) {

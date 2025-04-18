@@ -19,6 +19,8 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
   const [note, setNote] = useState<string>('');
   const [recentRevenue, setRecentRevenue] = useState<Revenue[]>([]);
   const [pendingAmount, setPendingAmount] = useState<number | null>(null);
+  const [lastProcessedCommand, setLastProcessedCommand] = useState<string>('');
+  const [processingLock, setProcessingLock] = useState<boolean>(false);
 
   // Load recent revenue entries
   useEffect(() => {
@@ -35,9 +37,18 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
 
   // Process voice commands
   useEffect(() => {
-    if (!lastCommand) return;
+    if (!lastCommand || lastCommand === lastProcessedCommand || processingLock) return;
 
     console.log('RevenueTracker processing command:', lastCommand);
+
+    // Set processing lock to prevent duplicate processing
+    setProcessingLock(true);
+    setLastProcessedCommand(lastCommand);
+
+    // Release the lock after a delay
+    const lockTimeout = setTimeout(() => {
+      setProcessingLock(false);
+    }, 3000);
 
     // Check for revenue command
     const revenueMatch = lastCommand.match(/record revenue (\d+(?:\.\d+)?)(?: dollars?)?/i) ||
@@ -64,12 +75,18 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
         setPendingAmount(amountValue);
 
         // If there's no pending note, save immediately
-        setTimeout(() => {
+        const saveTimeout = setTimeout(() => {
           if (pendingAmount === amountValue) {
             handleSaveRevenue(amountValue);
             setPendingAmount(null);
           }
         }, 3000); // Wait 3 seconds for a potential note command
+
+        // Clean up the timeout if the component unmounts
+        return () => {
+          clearTimeout(saveTimeout);
+          clearTimeout(lockTimeout);
+        };
       }
     }
 
@@ -86,7 +103,10 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
         setPendingAmount(null);
       }
     }
-  }, [lastCommand, pendingAmount]);
+
+    // Clean up the timeout if the component unmounts or if we didn't return earlier
+    return () => clearTimeout(lockTimeout);
+  }, [lastCommand, pendingAmount, lastProcessedCommand, processingLock]);
 
   // Helper function to convert word numbers to digits
   const wordToNumber = (word: string): number => {
