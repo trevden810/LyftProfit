@@ -1,0 +1,387 @@
+/* Base styles */
+:root {
+  --primary-color: #ff00bf; /* Lyft pink */
+  --secondary-color: #11a683; /* Green for profit */
+  --danger-color: #e74c3c; /* Red for expenses */
+  --background-color: #f8f9fa;
+  --card-background: #ffffff;
+  --text-color: #333333;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --transition-speed: 0.3s;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+  overflow-x: hidden;
+}
+
+/* App Container */
+.app-container {
+  max-width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dashboard */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+/* Header */
+.app-header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Voice Button */
+.voice-button {
+  background-color: white;
+  color: var(--primary-color);
+  border: none;
+  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  box-shadow: var(--box-shadow);
+  margin: 0.5rem 0;
+}
+
+.voice-button.listening {
+  background-color: #ff4dff;
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.last-command {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  background-color: white;
+  border-bottom: 1px solid #eee;
+}
+
+.tab-button {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 1rem 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.tab-button.active {
+  color: var(--primary-color);
+  border-bottom: 3px solid var(--primary-color);
+}
+
+/* Tab Content */
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Forms */
+.entry-form {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--box-shadow);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: white;
+  -webkit-appearance: none;
+}
+
+select.form-control {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1rem;
+  padding-right: 2rem;
+}
+
+.submit-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color var(--transition-speed);
+}
+
+.submit-button:active {
+  background-color: #d600a1;
+  transform: translateY(1px);
+}
+
+/* Voice Instructions */
+.voice-instructions {
+  background-color: #f0f0f0;
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.voice-instructions h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: #555;
+}
+
+.voice-instructions p {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: #666;
+}
+
+/* Entry Lists */
+.recent-entries {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  box-shadow: var(--box-shadow);
+}
+
+.recent-entries h3 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.entry-list {
+  list-style: none;
+}
+
+.entry-item {
+  display: flex;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.entry-item:last-child {
+  border-bottom: none;
+}
+
+.entry-amount {
+  font-weight: bold;
+  font-size: 1.1rem;
+  min-width: 100px;
+}
+
+.entry-details {
+  flex: 1;
+  text-align: left;
+  margin-left: 1rem;
+}
+
+.entry-category {
+  font-weight: 500;
+  color: #555;
+}
+
+.entry-time {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+.entry-note {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+/* Summary Component */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-card {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  box-shadow: var(--box-shadow);
+  text-align: center;
+}
+
+.summary-card h3 {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+.summary-card .amount {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.summary-card .percentage {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.summary-card.revenue-card {
+  color: var(--primary-color);
+}
+
+.summary-card.expenses-card {
+  color: var(--danger-color);
+}
+
+.summary-card.profit-card {
+  color: var(--secondary-color);
+  grid-column: span 2;
+}
+
+.summary-card.profit-card.negative {
+  color: var(--danger-color);
+}
+
+/* Expense Breakdown */
+.expense-breakdown {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--box-shadow);
+}
+
+.expense-breakdown h3 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.expense-category-item {
+  position: relative;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.expense-category-item:last-child {
+  border-bottom: none;
+}
+
+.category-name {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.category-amount {
+  font-weight: bold;
+  color: var(--danger-color);
+}
+
+.category-percentage {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+.category-bar {
+  height: 4px;
+  background-color: var(--danger-color);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  border-radius: 2px;
+}
+
+/* iPhone 12 Pro Max Specific Optimizations */
+@media screen and (min-width: 428px) {
+  .app-container {
+    max-width: 428px; /* iPhone 12 Pro Max width */
+    margin: 0 auto;
+  }
+}
+
+/* Make buttons and interactive elements larger for touch */
+@media (max-width: 428px) {
+  .voice-button,
+  .submit-button,
+  .form-control {
+    min-height: 48px; /* Minimum touch target size */
+  }
+
+  .tab-button {
+    padding: 1.25rem 0.5rem;
+  }
+}
