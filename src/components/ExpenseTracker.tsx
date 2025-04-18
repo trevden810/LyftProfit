@@ -10,8 +10,8 @@ interface ExpenseTrackerProps {
   lastCommand: string;
 }
 
-const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ 
-  voiceService, 
+const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
+  voiceService,
   onDataChange,
   lastCommand
 }) => {
@@ -38,17 +38,32 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
   useEffect(() => {
     if (!lastCommand) return;
 
+    console.log('ExpenseTracker processing command:', lastCommand);
+
     // Check for expense command
     const expenseMatch = lastCommand.match(/record expense (\d+(?:\.\d+)?)(?: dollars?)? for (.+)/i) ||
-                         lastCommand.match(/add expense (\d+(?:\.\d+)?)(?: dollars?)? for (.+)/i);
-    
+                         lastCommand.match(/add expense (\d+(?:\.\d+)?)(?: dollars?)? for (.+)/i) ||
+                         lastCommand.match(/record expense (\w+)(?: dollars?)? for (.+)/i) ||
+                         lastCommand.match(/add expense (\w+)(?: dollars?)? for (.+)/i);
+
     if (expenseMatch) {
-      const amount = parseFloat(expenseMatch[1]);
+      console.log('Expense match found in component:', expenseMatch);
+      let amountValue: number;
+
+      // Try to parse the amount as a number
+      if (!isNaN(parseFloat(expenseMatch[1]))) {
+        amountValue = parseFloat(expenseMatch[1]);
+      } else {
+        // Try to convert word numbers to digits
+        amountValue = wordToNumber(expenseMatch[1]);
+      }
+
       const categoryText = expenseMatch[2].toLowerCase();
-      
-      if (!isNaN(amount)) {
+      console.log('Parsed amount in component:', amountValue, 'Category text:', categoryText);
+
+      if (!isNaN(amountValue) && amountValue > 0) {
         let expenseCategory: ExpenseCategory = ExpenseCategory.OTHER;
-        
+
         if (categoryText.includes('gas')) {
           expenseCategory = ExpenseCategory.GAS;
         } else if (categoryText.includes('maintenance')) {
@@ -60,10 +75,18 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
         } else if (categoryText.includes('toll')) {
           expenseCategory = ExpenseCategory.TOLLS;
         }
-        
-        setAmount(amount.toString());
+
+        setAmount(amountValue.toString());
         setCategory(expenseCategory);
-        setPendingExpense({ amount, category: expenseCategory });
+        setPendingExpense({ amount: amountValue, category: expenseCategory });
+
+        // If there's no pending note, save immediately
+        setTimeout(() => {
+          if (pendingExpense && pendingExpense.amount === amountValue) {
+            handleSaveExpense(amountValue, expenseCategory);
+            setPendingExpense(null);
+          }
+        }, 3000); // Wait 3 seconds for a potential note command
       }
     }
 
@@ -71,15 +94,49 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
     if (pendingExpense !== null) {
       const noteMatch = lastCommand.match(/add note (.+)/i);
       if (noteMatch) {
+        console.log('Note match found in component:', noteMatch);
         const noteText = noteMatch[1];
         setNote(noteText);
-        
+
         // Automatically save the entry with the note
         handleSaveExpense(pendingExpense.amount, pendingExpense.category, noteText);
         setPendingExpense(null);
       }
     }
   }, [lastCommand, pendingExpense]);
+
+  // Helper function to convert word numbers to digits
+  const wordToNumber = (word: string): number => {
+    const wordMap: {[key: string]: number} = {
+      'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+      'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+      'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15,
+      'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 'nineteen': 19, 'twenty': 20,
+      'thirty': 30, 'forty': 40, 'fifty': 50, 'sixty': 60, 'seventy': 70,
+      'eighty': 80, 'ninety': 90
+    };
+
+    // Clean up the word and convert to lowercase
+    const cleanWord = word.toLowerCase().trim();
+
+    // Check if it's a simple number word
+    if (wordMap[cleanWord] !== undefined) {
+      return wordMap[cleanWord];
+    }
+
+    // Handle compound numbers like "twenty five"
+    const parts = cleanWord.split(/\s+/);
+    if (parts.length === 2) {
+      const tens = wordMap[parts[0]];
+      const ones = wordMap[parts[1]];
+      if (tens !== undefined && ones !== undefined && tens % 10 === 0) {
+        return tens + ones;
+      }
+    }
+
+    // If we can't parse it, return NaN
+    return NaN;
+  };
 
   const handleSaveExpense = (amountValue: number, categoryValue: ExpenseCategory, noteValue: string = '') => {
     const newExpense: Expense = {
@@ -91,18 +148,18 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
     };
 
     saveExpense(newExpense);
-    
+
     // Update the recent expenses list
     setRecentExpenses([newExpense, ...recentExpenses].slice(0, 5));
-    
+
     // Reset form
     setAmount('');
     setCategory(ExpenseCategory.GAS);
     setNote('');
-    
+
     // Notify parent component
     onDataChange();
-    
+
     // Provide voice feedback
     if (voiceService) {
       voiceService.speak(`Recorded ${formatCurrency(amountValue)} expense for ${categoryValue}.`);
@@ -111,7 +168,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) {
       if (voiceService) {
@@ -119,14 +176,14 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
       }
       return;
     }
-    
+
     handleSaveExpense(amountValue, category, note);
   };
 
   return (
     <div className="expense-tracker">
       <h2>Record Expense</h2>
-      
+
       <form onSubmit={handleSubmit} className="entry-form">
         <div className="form-group">
           <label htmlFor="amount">Amount ($)</label>
@@ -142,7 +199,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
             className="form-control"
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="category">Category</label>
           <select
@@ -158,7 +215,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
             ))}
           </select>
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="note">Note (Optional)</label>
           <input
@@ -170,18 +227,18 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
             className="form-control"
           />
         </div>
-        
+
         <button type="submit" className="submit-button">
           Save Expense
         </button>
       </form>
-      
+
       <div className="voice-instructions">
         <h3>Voice Commands</h3>
         <p>Say "Record expense [amount] for [category]" to add a new entry.</p>
         <p>Then say "Add note [your note]" to add details.</p>
       </div>
-      
+
       <div className="recent-entries">
         <h3>Recent Expenses</h3>
         {recentExpenses.length === 0 ? (

@@ -10,8 +10,8 @@ interface RevenueTrackerProps {
   lastCommand: string;
 }
 
-const RevenueTracker: React.FC<RevenueTrackerProps> = ({ 
-  voiceService, 
+const RevenueTracker: React.FC<RevenueTrackerProps> = ({
+  voiceService,
   onDataChange,
   lastCommand
 }) => {
@@ -37,15 +37,39 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
   useEffect(() => {
     if (!lastCommand) return;
 
+    console.log('RevenueTracker processing command:', lastCommand);
+
     // Check for revenue command
-    const revenueMatch = lastCommand.match(/record revenue (\d+(?:\.\d+)?)(?: dollars?)?/i) || 
-                         lastCommand.match(/add revenue (\d+(?:\.\d+)?)(?: dollars?)?/i);
-    
+    const revenueMatch = lastCommand.match(/record revenue (\d+(?:\.\d+)?)(?: dollars?)?/i) ||
+                         lastCommand.match(/add revenue (\d+(?:\.\d+)?)(?: dollars?)?/i) ||
+                         lastCommand.match(/record revenue (\w+)(?: dollars?)?/i) ||
+                         lastCommand.match(/add revenue (\w+)(?: dollars?)?/i);
+
     if (revenueMatch) {
-      const amount = parseFloat(revenueMatch[1]);
-      if (!isNaN(amount)) {
-        setAmount(amount.toString());
-        setPendingAmount(amount);
+      console.log('Revenue match found in component:', revenueMatch);
+      let amountValue: number;
+
+      // Try to parse the amount as a number
+      if (!isNaN(parseFloat(revenueMatch[1]))) {
+        amountValue = parseFloat(revenueMatch[1]);
+      } else {
+        // Try to convert word numbers to digits
+        amountValue = wordToNumber(revenueMatch[1]);
+      }
+
+      console.log('Parsed amount in component:', amountValue);
+
+      if (!isNaN(amountValue) && amountValue > 0) {
+        setAmount(amountValue.toString());
+        setPendingAmount(amountValue);
+
+        // If there's no pending note, save immediately
+        setTimeout(() => {
+          if (pendingAmount === amountValue) {
+            handleSaveRevenue(amountValue);
+            setPendingAmount(null);
+          }
+        }, 3000); // Wait 3 seconds for a potential note command
       }
     }
 
@@ -53,15 +77,49 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
     if (pendingAmount !== null) {
       const noteMatch = lastCommand.match(/add note (.+)/i);
       if (noteMatch) {
+        console.log('Note match found in component:', noteMatch);
         const noteText = noteMatch[1];
         setNote(noteText);
-        
+
         // Automatically save the entry with the note
         handleSaveRevenue(pendingAmount, noteText);
         setPendingAmount(null);
       }
     }
   }, [lastCommand, pendingAmount]);
+
+  // Helper function to convert word numbers to digits
+  const wordToNumber = (word: string): number => {
+    const wordMap: {[key: string]: number} = {
+      'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+      'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+      'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15,
+      'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 'nineteen': 19, 'twenty': 20,
+      'thirty': 30, 'forty': 40, 'fifty': 50, 'sixty': 60, 'seventy': 70,
+      'eighty': 80, 'ninety': 90
+    };
+
+    // Clean up the word and convert to lowercase
+    const cleanWord = word.toLowerCase().trim();
+
+    // Check if it's a simple number word
+    if (wordMap[cleanWord] !== undefined) {
+      return wordMap[cleanWord];
+    }
+
+    // Handle compound numbers like "twenty five"
+    const parts = cleanWord.split(/\s+/);
+    if (parts.length === 2) {
+      const tens = wordMap[parts[0]];
+      const ones = wordMap[parts[1]];
+      if (tens !== undefined && ones !== undefined && tens % 10 === 0) {
+        return tens + ones;
+      }
+    }
+
+    // If we can't parse it, return NaN
+    return NaN;
+  };
 
   const handleSaveRevenue = (amountValue: number, noteValue: string = '') => {
     const newRevenue: Revenue = {
@@ -72,17 +130,17 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
     };
 
     saveRevenue(newRevenue);
-    
+
     // Update the recent revenue list
     setRecentRevenue([newRevenue, ...recentRevenue].slice(0, 5));
-    
+
     // Reset form
     setAmount('');
     setNote('');
-    
+
     // Notify parent component
     onDataChange();
-    
+
     // Provide voice feedback
     if (voiceService) {
       voiceService.speak(`Recorded ${formatCurrency(amountValue)} revenue.`);
@@ -91,7 +149,7 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) {
       if (voiceService) {
@@ -99,14 +157,14 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
       }
       return;
     }
-    
+
     handleSaveRevenue(amountValue, note);
   };
 
   return (
     <div className="revenue-tracker">
       <h2>Record Revenue</h2>
-      
+
       <form onSubmit={handleSubmit} className="entry-form">
         <div className="form-group">
           <label htmlFor="amount">Amount ($)</label>
@@ -122,7 +180,7 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
             className="form-control"
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="note">Note (Optional)</label>
           <input
@@ -134,18 +192,18 @@ const RevenueTracker: React.FC<RevenueTrackerProps> = ({
             className="form-control"
           />
         </div>
-        
+
         <button type="submit" className="submit-button">
           Save Revenue
         </button>
       </form>
-      
+
       <div className="voice-instructions">
         <h3>Voice Commands</h3>
         <p>Say "Record revenue [amount]" to add a new entry.</p>
         <p>Then say "Add note [your note]" to add details.</p>
       </div>
-      
+
       <div className="recent-entries">
         <h3>Recent Revenue</h3>
         {recentRevenue.length === 0 ? (

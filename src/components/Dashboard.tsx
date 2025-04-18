@@ -14,6 +14,8 @@ const Dashboard: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [lastCommand, setLastCommand] = useState('');
   const [voiceService, setVoiceService] = useState<VoiceRecognitionService | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugMessages, setDebugMessages] = useState<string[]>([]);
 
   // Initialize voice recognition service
   useEffect(() => {
@@ -59,6 +61,7 @@ const Dashboard: React.FC = () => {
       },
       onResult: (result: string) => {
         setLastCommand(result);
+        setDebugMessages(prev => [...prev, `Command received: ${result}`].slice(-10));
       }
     };
 
@@ -117,6 +120,50 @@ const Dashboard: React.FC = () => {
         {lastCommand && (
           <div className="last-command">
             <small>Last command: "{lastCommand}"</small>
+            <button
+              className="debug-toggle"
+              onClick={() => setShowDebug(!showDebug)}
+              style={{ marginLeft: '10px', fontSize: '0.8rem', padding: '2px 5px' }}
+            >
+              {showDebug ? 'Hide Debug' : 'Show Debug'}
+            </button>
+          </div>
+        )}
+
+        {showDebug && (
+          <div className="debug-panel" style={{
+            backgroundColor: '#f0f0f0',
+            padding: '10px',
+            margin: '10px 0',
+            borderRadius: '5px',
+            textAlign: 'left',
+            fontSize: '0.8rem'
+          }}>
+            <h4>Debug Messages:</h4>
+            <ul style={{ listStyle: 'none', padding: '0', margin: '0' }}>
+              {debugMessages.map((msg, index) => (
+                <li key={index} style={{ marginBottom: '5px' }}>{msg}</li>
+              ))}
+            </ul>
+            <div style={{ marginTop: '10px' }}>
+              <button
+                onClick={() => {
+                  if (voiceService) {
+                    voiceService.speak('Testing speech synthesis');
+                    setDebugMessages(prev => [...prev, 'Testing speech synthesis'].slice(-10));
+                  }
+                }}
+                style={{ fontSize: '0.8rem', padding: '2px 5px', marginRight: '5px' }}
+              >
+                Test Speech
+              </button>
+              <button
+                onClick={() => console.log('Current state:', { revenue, expenses, lastCommand, isListening })}
+                style={{ fontSize: '0.8rem', padding: '2px 5px' }}
+              >
+                Log State
+              </button>
+            </div>
           </div>
         )}
       </header>
