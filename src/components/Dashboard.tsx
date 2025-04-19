@@ -149,13 +149,13 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={() => {
                   if (voiceService) {
-                    voiceService.speak('Testing speech synthesis');
-                    setDebugMessages(prev => [...prev, 'Testing speech synthesis'].slice(-10));
+                    voiceService.speak('Hello, this is your Lyft Profit Tracker. I\'ll help you track your earnings and expenses.');
+                    setDebugMessages(prev => [...prev, 'Testing Demi Moore-like voice'].slice(-10));
                   }
                 }}
                 style={{ fontSize: '0.8rem', padding: '2px 5px', marginRight: '5px' }}
               >
-                Test Speech
+                Test Demi Moore Voice
               </button>
               <button
                 onClick={() => console.log('Current state:', { revenue, expenses, lastCommand, isListening })}

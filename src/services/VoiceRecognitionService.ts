@@ -58,10 +58,26 @@ class VoiceRecognitionService {
   private processingCooldown: boolean = false;
   private lastCommandTime: number = 0;
 
+  private voices: SpeechSynthesisVoice[] = [];
+
   constructor(handlers: VoiceCommandHandler) {
     this.handlers = handlers;
     this.speechSynthesis = window.speechSynthesis;
+
+    // Initialize voices
+    this.loadVoices();
+
+    // Some browsers need this event to load voices
+    if (this.speechSynthesis.onvoiceschanged !== undefined) {
+      this.speechSynthesis.onvoiceschanged = this.loadVoices.bind(this);
+    }
+
     this.initRecognition();
+  }
+
+  private loadVoices(): void {
+    this.voices = this.speechSynthesis.getVoices();
+    console.log('Loaded voices:', this.voices.map(v => v.name));
   }
 
   private initRecognition(): void {
@@ -122,9 +138,48 @@ class VoiceRecognitionService {
     this.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+
+    // Customize voice to sound more like Demi Moore (deeper female voice)
+    utterance.rate = 0.9;     // Slightly slower rate
+    utterance.pitch = 0.8;    // Lower pitch for a deeper voice
+    utterance.volume = 1.0;   // Full volume
+
+    // Try to find a suitable voice
+    // If voices array is empty, try to load them again
+    if (this.voices.length === 0) {
+      this.loadVoices();
+    }
+
+    console.log('Available voices:', this.voices.map(v => v.name));
+
+    // Look for a good female voice with a deeper tone (similar to Demi Moore)
+    let selectedVoice = this.voices.find(voice =>
+      voice.name.includes('Samantha') || // US female voice
+      voice.name.includes('Karen') ||    // Australian female voice
+      voice.name.includes('Moira') ||    // Irish female voice
+      voice.name.includes('Veena') ||    // Indian female voice
+      voice.name.includes('Tessa'));     // South African female voice
+
+    // If no specific female voice found, try to find any English female voice
+    if (!selectedVoice) {
+      selectedVoice = this.voices.find(voice =>
+        voice.lang.startsWith('en') &&
+        !voice.name.includes('Male') &&
+        !voice.name.includes('male'));
+    }
+
+    // If still no voice found, just use any female voice
+    if (!selectedVoice) {
+      selectedVoice = this.voices.find(voice =>
+        !voice.name.includes('Male') &&
+        !voice.name.includes('male'));
+    }
+
+    // If we found a suitable voice, use it
+    if (selectedVoice) {
+      console.log('Selected voice:', selectedVoice.name);
+      utterance.voice = selectedVoice;
+    }
 
     this.speechSynthesis.speak(utterance);
   }
